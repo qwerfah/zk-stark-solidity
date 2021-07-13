@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.25;
 
+pragma experimental ABIEncoderV2;
+
 import "./PartieInterface.sol";
 
 interface VerifierInterface is PartieInterface {
@@ -18,5 +20,5 @@ interface VerifierInterface is PartieInterface {
 }
 
 interface IoppVerifierInterface is VerifierInterface {
-    function queriesToInput() external view returns (mapping(uint256 => ));
+    function queriesToInput() external view;
 }
