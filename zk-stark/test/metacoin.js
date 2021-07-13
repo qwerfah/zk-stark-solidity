@@ -3,6 +3,7 @@ const truffleAssert = require('truffle-assertions');
 
 contract('MetaCoin', (accounts) => {
   let instance;
+  
   beforeEach('should setup the contract instance', async () => {
     instance = await MetaCoin.deployed();
   });
