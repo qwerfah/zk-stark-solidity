@@ -2,33 +2,64 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-struct Node {
-    bytes32 leftHash;
-    bytes32 rightHash;
+// Hash map element
+struct HashMapElement {
+    // True if element with specified hash is presented in map
+    bool isSet;
+    // Index of hash in array tree representation
+    uint256 index;
 }
 
+// Represents binary tree which leafs are hashes of tree element values
+// and nodes are hashes of concatination of all its children
 contract MerkleTree {
+    // Two-dimensional array representation of hash tree
     bytes32[][] private _raw;
-    mapping(bytes32 => bool) private _hashes;
+    // Maps tree node hashes to its indices in array tree representation
+    mapping(bytes32 => HashMapElement) private _hashes;
 
-    uint256 internal constant WORD_SIZE = 32;
+    uint256 private constant WORD_SIZE = 32;
 
     constructor() {
         _raw.push();
     }
 
+    // Get current tree root
     function getRoot() external view returns (bytes32) {
         require(_raw[_raw.length - 1].length == 1, "Empty tree");
         return _raw[_raw.length - 1][0];
     }
 
-    function getAuthPath(bytes32 hash) external view returns (bytes memory) {
-        if (!_hashes[hash])
+    // Get authentication path for specified tree leaf hash
+    // Reverts if hash is not presented in tree
+    function getAuthPath(bytes32 hash)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        HashMapElement storage element = _hashes[hash];
+        if (!element.isSet)
             revert("Value with specified hash doesn't presented in tree");
+
+        uint256 level = 0;
+        uint256 index = element.index;
+        uint256[] memory path;
+
+        while (level != _raw.length) {
+            path.push();
+        }
+
+        return path;
     }
 
+    function getOtherChild(uint256 level, uint256 index)
+        private
+        view
+        returns (uint256)
+    {}
+
     // Inserts hash to Merkle tree and returns new tree root hash.
-    function addHash(bytes calldata hash) public returns (bytes32) {
+    function addHash(bytes calldata data) public returns (bytes32, bytes32) {
         require(_raw.length > 0, "Raw tree representation is not initialized");
 
         bytes32 prevRoot = _raw[_raw.length - 1].length > 0
@@ -36,9 +67,15 @@ contract MerkleTree {
             : bytes32(0x0);
 
         _raw[0].push();
-        _raw[0][_raw[0].length - 1] = keccak256(abi.encodePacked(hash));
+        bytes32 hash = keccak256(abi.encodePacked(data));
+        _raw[0][_raw[0].length - 1] = hash;
+        _hashes[hash] = HashMapElement(true, _raw[0].length - 1);
 
         if (_raw[0].length % 2 == 0) {
+            if (_raw[0][_raw[0].length - 1] == _raw[0][_raw[0].length - 2]) {
+                return (hash, _raw[_raw.length - 1][0]);
+            }
+
             recalcHashes(1);
         } else {
             calcHashes(1);
@@ -54,7 +91,7 @@ contract MerkleTree {
             "Tree root hash doesn't changes after insertion"
         );
 
-        return _raw[_raw.length - 1][0];
+        return (hash, _raw[_raw.length - 1][0]);
     }
 
     // Inserts multiple hashes to the Merkle tree and returns new root hash.
@@ -64,8 +101,10 @@ contract MerkleTree {
     function recalcHashes(uint256 level) private {
         if (level == _raw.length) return;
 
-        bytes32 hash1 = _raw[level - 1][_raw[level - 1].length - 2];
-        bytes32 hash2 = _raw[level - 1][_raw[level - 1].length - 1];
+        uint256 prev = level - 1;
+        bytes32 hash1 = _raw[prev][_raw[prev].length - 2];
+        bytes32 hash2 = _raw[prev][_raw[prev].length - 1];
+
         _raw[level][_raw[level].length - 1] = keccak256(
             concat(abi.encodePacked(hash1), abi.encodePacked(hash2))
         );
@@ -90,7 +129,7 @@ contract MerkleTree {
 
         uint256 prev = level - 1;
 
-        if (_raw[level - 1].length % 2 == 0) {
+        if (_raw[prev].length % 2 == 0) {
             hash1 = _raw[prev][_raw[prev].length - 2];
             hash2 = _raw[prev][_raw[prev].length - 1];
         } else {
