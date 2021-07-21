@@ -7,7 +7,14 @@ struct HashMapElement {
     // True if element with specified hash is presented in map
     bool isSet;
     // Index of hash in array tree representation
-    uint256 index;
+    uint32 index;
+}
+
+enum ChildPos { Left, Right }
+
+struct AuthPathElement {
+    ChildPos pos;
+    bytes32 hash;
 }
 
 // Represents binary tree which leafs are hashes of tree element values
@@ -35,28 +42,65 @@ contract MerkleTree {
     function getAuthPath(bytes32 hash)
         external
         view
-        returns (uint256[] memory)
+        returns (AuthPathElement[] memory)
     {
         HashMapElement storage element = _hashes[hash];
-        if (!element.isSet)
+        if (!element.isSet) {
             revert("Value with specified hash doesn't presented in tree");
+        }
 
-        uint256 level = 0;
-        uint256 index = element.index;
-        uint256[] memory path;
+        uint32 level = 0;
+        uint32 index = element.index;
+        AuthPathElement[] memory path = new AuthPathElement[](_raw.length);
 
-        while (level != _raw.length) {
-            path.push();
+        for (;level != _raw.length; level++) {
+            path[level] = getNeighbour(level, index);
         }
 
         return path;
     }
 
-    function getOtherChild(uint256 level, uint256 index)
+    // Get neighbour of tree node with specified index on given level
+    function getNeighbour(uint32 level, uint32 index)
         private
         view
-        returns (uint256)
-    {}
+        returns (AuthPathElement memory)
+    {
+        require(level >= 0 && level < _raw.length, "Level is out of range");
+        require(index >= 0 && index < _raw[level].length, "Index is out of range");
+        
+        if (level == 0) {
+            if (index % 2 == 1) {
+                return AuthPathElement(ChildPos.Left, _raw[0][index - 1]);
+            } else {
+                if (index + 1 < _raw[0].length) {
+                    return AuthPathElement(ChildPos.Right, _raw[0][index + 1]);
+                } else {
+                    return AuthPathElement(ChildPos.Right, _raw[0][index]);
+                }
+            }
+        } else {
+            if (index % 2 == 1) {
+                return AuthPathElement(ChildPos.Left, _raw[level][index - 1]);
+            } else {
+                return getUnbalancedNeighbour(level + 1);
+            }
+        }
+    }
+    
+    // Get neighbour of tree node with unbalanced parent 
+    // (left and right subtree depths are not equal) 
+    function getUnbalancedNeighbour(uint32 level) 
+        private 
+        view 
+        returns (AuthPathElement memory) 
+    {
+        require(level > 0 && level < _raw.length, "Level is out of range");
+        
+        for (; level < _raw.length; level++) {
+            
+        }
+    }
 
     // Inserts hash to Merkle tree and returns new tree root hash.
     function addHash(bytes calldata data) public returns (bytes32, bytes32) {
@@ -69,7 +113,7 @@ contract MerkleTree {
         _raw[0].push();
         bytes32 hash = keccak256(abi.encodePacked(data));
         _raw[0][_raw[0].length - 1] = hash;
-        _hashes[hash] = HashMapElement(true, _raw[0].length - 1);
+        _hashes[hash] = HashMapElement(true, uint32(_raw[0].length - 1));
 
         if (_raw[0].length % 2 == 0) {
             if (_raw[0][_raw[0].length - 1] == _raw[0][_raw[0].length - 2]) {
@@ -83,12 +127,12 @@ contract MerkleTree {
 
         require(
             _raw[_raw.length - 1].length == 1,
-            "Top level can contains only of single node"
+            "Top level can consists only of single node"
         );
         require(
             (prevRoot == bytes32(0x0)) ||
                 (_raw[_raw.length - 1][0] != prevRoot),
-            "Tree root hash doesn't changes after insertion"
+            "Tree root hash didn't change after insertion"
         );
 
         return (hash, _raw[_raw.length - 1][0]);
