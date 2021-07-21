@@ -5,6 +5,9 @@
 logs
 *.log
 
+# VS Code data
+.vscode
+
 # Runtime data
 pids
 *.pid
