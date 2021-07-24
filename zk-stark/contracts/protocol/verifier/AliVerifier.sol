@@ -5,6 +5,6 @@ pragma experimental ABIEncoderV2;
 
 import "./VerifierInterface.sol";
 
-contract Verifier is VerifierInterface {
+contract AliVerifier is VerifierInterface {
     constructor()
 }
