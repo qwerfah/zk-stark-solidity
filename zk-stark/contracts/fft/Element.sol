@@ -1,12 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.25;
 
-contract Element {
-    uint256[] c;
+library Element {
+    struct Element {
+        uint64[] c;
+    }
 
-    function generateOrdElement(Element e) public {}
+    uint32 constant sizeof_cell_t = 64;
+    uint32 constant log_bits_in_byte = 3;
+    uint32 constant bits_in_byte = uint32(1) << log_bits_in_byte;
+    uint32 constant log_ord = 6;
+    uint32 constant ord = uint32(1) << log_ord;
+    uint32 constant log_bits_in_cell = 6;
+    uint32 constant bits_in_cell = uint32(1) << log_bits_in_cell;
+    uint32 constant element_len = (ord >> log_bits_in_byte) / sizeof_cell_t;
 
-    // 
+    function generateOrdElement(Element storage e) public {}
+
+    //
     function clMulXor(uint128 a, uint128 b) public pure returns (uint128 res) {
         assembly {
             function getBit(num, n) -> result {
@@ -78,4 +89,34 @@ contract Element {
     function equals(uint256 a, uint256 b) public view returns (bool) {}
 
     function setElementMul(uint256 e) public view {}
+
+    function c_add(Element calldata a, Element calldata b)
+        public
+        pure
+        returns (Element memory)
+    {
+        Element memory element = Element(new uint64[](element_len));
+        uint256 i = 0;
+
+        for (; i < element_len; i++) {
+            element.c[i] = a.c[i] ^ b.c[i];
+        }
+
+        return element;
+    }
+
+    function c_mul(Element calldata a, Element calldata b)
+        public
+        pure
+        returns (Element memory)
+    {
+        Element memory element = Element(new uint64[](element_len));
+        uint256 i = 0;
+
+        for (; i < element_len; i++) {
+            element.c[i] = a.c[i] ^ b.c[i];
+        }
+
+        return element;
+    }
 }

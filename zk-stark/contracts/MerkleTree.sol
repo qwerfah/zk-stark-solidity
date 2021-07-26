@@ -10,7 +10,10 @@ struct HashMapElement {
     uint32 index;
 }
 
-enum ChildPos { Left, Right }
+enum ChildPos {
+    Left,
+    Right
+}
 
 struct AuthPathElement {
     ChildPos pos;
@@ -53,7 +56,7 @@ contract MerkleTree {
         uint32 index = element.index;
         AuthPathElement[] memory path = new AuthPathElement[](_raw.length);
 
-        for (;level != _raw.length; level++) {
+        for (; level != _raw.length; level++) {
             path[level] = getNeighbour(level, index);
         }
 
@@ -67,8 +70,11 @@ contract MerkleTree {
         returns (AuthPathElement memory)
     {
         require(level >= 0 && level < _raw.length, "Level is out of range");
-        require(index >= 0 && index < _raw[level].length, "Index is out of range");
-        
+        require(
+            index >= 0 && index < _raw[level].length,
+            "Index is out of range"
+        );
+
         if (level == 0) {
             if (index % 2 == 1) {
                 return AuthPathElement(ChildPos.Left, _raw[0][index - 1]);
@@ -87,19 +93,17 @@ contract MerkleTree {
             }
         }
     }
-    
-    // Get neighbour of tree node with unbalanced parent 
-    // (left and right subtree depths are not equal) 
-    function getUnbalancedNeighbour(uint32 level) 
-        private 
-        view 
-        returns (AuthPathElement memory) 
+
+    // Get neighbour of tree node with unbalanced parent
+    // (left and right subtree depths are not equal)
+    function getUnbalancedNeighbour(uint32 level)
+        private
+        view
+        returns (AuthPathElement memory)
     {
         require(level > 0 && level < _raw.length, "Level is out of range");
-        
-        for (; level < _raw.length; level++) {
-            
-        }
+
+        for (; level < _raw.length; level++) {}
     }
 
     // Inserts hash to Merkle tree and returns new tree root hash.
