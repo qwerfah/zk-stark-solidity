@@ -4,6 +4,7 @@ pragma solidity >=0.4.25;
 pragma experimental ABIEncoderV2;
 
 import "./MultivarFunc.sol";
+import "./FieldElement.sol";
 
 abstract contract PolynomialInterface is MultivarFunc {
     function evalOnSet(FieldElement[][] calldata x_set)
