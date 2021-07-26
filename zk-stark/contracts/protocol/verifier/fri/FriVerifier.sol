@@ -3,8 +3,8 @@ pragma solidity >=0.4.25;
 
 pragma experimental ABIEncoderV2;
 
-import "./VerifierInterface.sol";
+import "../VerifierInterface.sol";
 
-contract AliVerifier is VerifierInterface {
+contract FriVerifier is IoppVerifierInterface {
     constructor()
 }
